@@ -1,0 +1,47 @@
+[
+  {"id": "d01", "type": "chat", "dur": 11, "bpm": 130, "seed": 101, "acc": "#ff2b6a", "acc2": "#a020ff", "shake": true,
+   "hook": "Ton IA te fait la morale\u00a0? 🙄",
+   "ask": "Fais-moi une blague d'humour noir",
+   "refuse": "Désolé, je ne peux pas produire ce type de contenu.",
+   "answer": "Avec plaisir 😈 Accroche-toi, celle-là pique…"},
+
+  {"id": "d02", "type": "kinetic", "dur": 10, "bpm": 140, "seed": 202, "acc": "#b44bff", "acc2": "#ff2b6a", "shake": true,
+   "words": ["Pas de", "filtre.", "Pas de", "morale.", "Pas de", "*refus.", "Juste", "*Datenshi."], "step": 0.8},
+
+  {"id": "d03", "type": "list", "dur": 11, "bpm": 125, "seed": 303, "acc": "#ff4d2b", "acc2": "#ff2bb0",
+   "hook": "3 raisons de lâcher ton IA <span class='accent'>censurée</span>",
+   "items": ["Elle répond <span class='accent'>vraiment</span> à tes questions", "Zéro sermon, zéro jugement", "Moins cher qu'un café : <span class='accent'>1€/mois</span>"]},
+
+  {"id": "d04", "type": "censor", "dur": 10, "bpm": 135, "seed": 404, "acc": "#2bffb1", "acc2": "#2b8cff",
+   "hook": "Ce que les autres IA te cachent…",
+   "lines": ["Des réponses *franches*", "Des histoires *sans filtre*", "Des avis *sans langue de bois*"]},
+
+  {"id": "d05", "type": "chat", "dur": 11, "bpm": 128, "seed": 505, "acc": "#ffb02b", "acc2": "#ff2b6a", "shake": true,
+   "hook": "POV : tu demandes un avis honnête",
+   "ask": "Sois cash : mon business plan tient la route\u00a0?",
+   "refuse": "Chaque projet a ses forces\u00a0! Je préfère rester positif 😊",
+   "answer": "Franchement\u00a0? Ta marge est trop faible. Voilà comment la corriger…"},
+
+  {"id": "d06", "type": "kinetic", "dur": 10, "bpm": 145, "seed": 606, "acc": "#2bd9ff", "acc2": "#a020ff", "shake": true,
+   "words": ["Une IA", "qui ose", "*TOUT", "dire.", "Pour", "*1€", "par mois."], "step": 0.85},
+
+  {"id": "d07", "type": "chat", "dur": 11, "bpm": 132, "seed": 707, "acc": "#ff2b4a", "acc2": "#ff8a2b", "shake": true,
+   "hook": "Écrivains, ça c'est pour vous ✍️",
+   "ask": "Écris une scène de thriller vraiment sombre pour mon roman",
+   "refuse": "Je ne peux pas écrire de contenu violent ou dérangeant.",
+   "answer": "Parfait. La pluie noyait les sirènes quand il ouvrit la porte…"},
+
+  {"id": "d08", "type": "list", "dur": 11, "bpm": 138, "seed": 808, "acc": "#c6ff2b", "acc2": "#2bffb1",
+   "hook": "Ce que Datenshi fait que <span class='accent'>les autres refusent</span>",
+   "items": ["Humour noir et sujets tabous", "Roleplay et fictions sans filtre", "Débats sans langue de bois"]},
+
+  {"id": "d09", "type": "censor", "dur": 10, "bpm": 126, "seed": 909, "acc": "#ff2bd6", "acc2": "#6a2bff",
+   "hook": "Marre des « je ne peux pas »\u00a0?",
+   "lines": ["Pose *toutes* tes questions", "Reçois *de vraies* réponses", "Dès *1€ par mois*"]},
+
+  {"id": "d10", "type": "chat", "dur": 11, "bpm": 134, "seed": 1010, "acc": "#8a2bff", "acc2": "#ff2b6a", "shake": true,
+   "hook": "Demande-lui de te roaster 🔥",
+   "ask": "Roast-moi sans pitié, je suis prêt",
+   "refuse": "Je préfère ne pas me moquer de toi, tu es super\u00a0!",
+   "answer": "Prêt\u00a0? Même ton GPS te demande si t'es sûr de toi 💀"}
+]

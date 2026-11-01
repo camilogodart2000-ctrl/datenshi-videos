@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #07050c; }
+  body { font-family: 'Poppins', 'Inter', 'Noto Color Emoji', sans-serif; color: #fff; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .bg { position: absolute; inset: -10%; }
+  .grain { position: absolute; inset: 0; opacity: .08; background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.5) 0 1px, transparent 1px 4px); mix-blend-mode: overlay; }
+  .layer { position: absolute; inset: 0; }
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px; }
+  .hook { font-weight: 800; font-size: 82px; line-height: 1.08; letter-spacing: -1px; text-shadow: 0 6px 30px rgba(0,0,0,.6); }
+  .big { font-weight: 800; font-size: 150px; line-height: 1; letter-spacing: -3px; text-transform: uppercase; }
+  .sub { font-weight: 600; font-size: 54px; line-height: 1.2; opacity: .92; }
+  .accent { color: var(--acc); }
+  .pill { display: inline-block; padding: 14px 34px; border-radius: 999px; background: var(--acc); color: #0b0610; font-weight: 800; font-size: 50px; }
+  /* chat */
+  .chat { position: absolute; left: 70px; right: 70px; top: 540px; display: flex; flex-direction: column; gap: 70px; }
+  .msg { max-width: 820px; padding: 30px 38px; border-radius: 40px; font-size: 46px; line-height: 1.3; font-weight: 500; }
+  .msg .who { display: block; font-size: 30px; font-weight: 700; opacity: .7; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
+  .me { align-self: flex-end; background: #2a2f3a; border-bottom-right-radius: 10px; }
+  .bot { align-self: flex-start; background: #1b1d24; border: 2px solid #3a3d48; border-bottom-left-radius: 10px; }
+  .dat { align-self: flex-start; background: linear-gradient(135deg, var(--acc), var(--acc2)); color: #0b0610; font-weight: 600; border-bottom-left-radius: 10px; box-shadow: 0 20px 60px -10px var(--acc); }
+  .stamp { position: absolute; font-weight: 900; font-size: 120px; color: #ff2b4a; border: 12px solid #ff2b4a; padding: 6px 40px; border-radius: 20px; letter-spacing: 6px; }
+  /* list */
+  .item { display: flex; align-items: center; gap: 36px; padding: 34px 44px; margin: 0 70px 34px; border-radius: 34px; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.12); font-size: 52px; font-weight: 700; line-height: 1.2; }
+  .num { flex: none; width: 110px; height: 110px; border-radius: 30px; background: var(--acc); color: #0b0610; display: flex; align-items: center; justify-content: center; font-size: 66px; font-weight: 900; }
+  /* censor */
+  .line { position: relative; font-size: 72px; font-weight: 800; line-height: 1.25; margin: 16px 0; display: inline-block; }
+  .bar { position: absolute; left: -16px; right: -16px; top: 6px; bottom: 6px; background: #000; transform-origin: right center; }
+  .bar span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ff2b4a; font-weight: 900; letter-spacing: 8px; }
+  /* cta */
+  .logo { font-weight: 900; font-size: 140px; letter-spacing: -4px; }
+  .halo { position: absolute; width: 900px; height: 900px; border-radius: 50%; filter: blur(80px); opacity: .55; }
+  .wing { font-size: 170px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+const W = 1080, H = 1920;
+let CFG = null;
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const back = x => { x = clamp(x); const c = 1.9; return 1 + (c+1)*Math.pow(x-1,3) + c*Math.pow(x-1,2); };
+const prog = (t, a, d) => clamp((t - a) / d);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// deterministic pseudo-random
+const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+function typed(text, t, start, cps = 32) {
+  const n = Math.floor(clamp((t - start) * cps, 0, text.length));
+  return esc(text.slice(0, n));
+}
+
+function background(t) {
+  const c = CFG;
+  const a = (t * 12) % 360;
+  const y1 = 30 + 10 * Math.sin(t * 0.9), y2 = 70 + 10 * Math.cos(t * 0.7);
+  const beat = Math.pow(1 - ((t * c.bpm / 60) % 1), 4);
+  return `<div class="bg" style="background:
+      radial-gradient(60% 40% at 20% ${y1}%, ${c.acc}55, transparent 70%),
+      radial-gradient(60% 40% at 85% ${y2}%, ${c.acc2}55, transparent 70%),
+      conic-gradient(from ${a}deg at 50% 50%, #07050c, #120a1f, #07050c);
+      filter: brightness(${1 + beat * 0.25});"></div><div class="grain"></div>`;
+}
+
+function glitch(html, t, strength) {
+  if (strength <= 0) return html;
+  const off = (rnd(Math.floor(t * 30)) - .5) * 40 * strength;
+  return `<div style="position:relative">
+    <div style="position:absolute;inset:0;transform:translateX(${off}px);color:#ff2b4a;opacity:.7;mix-blend-mode:screen">${html}</div>
+    <div style="position:absolute;inset:0;transform:translateX(${-off}px);color:#2bd9ff;opacity:.7;mix-blend-mode:screen">${html}</div>
+    <div style="position:relative">${html}</div></div>`;
+}
+
+function cta(t, start) {
+  const p = ease(prog(t, start, .5));
+  if (p <= 0) return '';
+  const s = back(prog(t, start, .6));
+  const pulse = 1 + 0.04 * Math.sin((t - start) * 8);
+  const arrowY = 14 * Math.sin((t - start) * 7);
+  return `<div class="layer center" style="background:rgba(7,5,12,${.96 * p});opacity:${p}">
+    <div class="halo" style="background:${CFG.acc};top:420px;left:90px"></div>
+    <div style="position:relative;transform:scale(${s})">
+      <div class="wing">😈</div>
+      <div class="logo">DATENSHI<span class="accent">.fr</span></div>
+      <div class="sub" style="margin-top:20px">L'IA <b class="accent">sans censure</b></div>
+      <div style="margin-top:56px;transform:scale(${pulse})"><span class="pill">dès 1€ / mois</span></div>
+      <div class="hook" style="margin-top:110px;font-size:72px;transform:translateY(${arrowY}px)">👇 Lien en bio 👇</div>
+    </div></div>`;
+}
+
+const SCENES = {
+  chat(t) {
+    const c = CFG;
+    const hookP = ease(prog(t, 0, .4));
+    let h = `<div class="layer" style="top:150px;height:340px;display:flex;align-items:center;justify-content:center;padding:0 70px;text-align:center">
+      <div class="hook" style="opacity:${hookP};transform:translateY(${(1-hookP)*40}px)">${c.hook}</div></div>`;
+    h += `<div class="chat">`;
+    if (t > 1.1) {
+      const p = back(prog(t, 1.1, .35));
+      h += `<div class="msg me" style="transform:scale(${p});transform-origin:right bottom"><span class="who">Toi</span>${typed(c.ask, t, 1.1, 45)}</div>`;
+    }
+    if (t > 2.6) {
+      const p = back(prog(t, 2.6, .35));
+      h += `<div class="msg bot" style="transform:scale(${p});transform-origin:left bottom;position:relative"><span class="who">IA classique</span>${typed(c.refuse, t, 2.7, 40)}`;
+      if (t > 3.9) {
+        const sp = back(prog(t, 3.9, .25));
+        h += `<div class="stamp" style="right:-30px;bottom:-70px;font-size:72px;border-width:8px;padding:2px 26px;background:#07050c;transform:rotate(-8deg) scale(${2 - sp});opacity:${clamp(sp*1.5)}">REFUSÉ</div>`;
+      }
+      h += `</div>`;
+    }
+    if (t > 4.8) {
+      const p = back(prog(t, 4.8, .35));
+      h += `<div class="msg dat" style="transform:scale(${p});transform-origin:left bottom"><span class="who">Datenshi 😈</span>${typed(c.answer, t, 4.9, 34)}</div>`;
+    }
+    h += `</div>`;
+    return h + cta(t, c.dur - 3.2);
+  },
+
+  kinetic(t) {
+    const c = CFG, words = c.words, step = c.step || 0.75;
+    let h = '';
+    const end = words.length * step;
+    if (t < end + 0.3) {
+      const i = Math.min(words.length - 1, Math.floor(t / step));
+      const lt = t - i * step;
+      const p = back(prog(lt, 0, .25));
+      const g = lt < .12 ? 1 : 0;
+      const w = words[i];
+      const isAcc = w.startsWith('*');
+      const txt = isAcc ? w.slice(1) : w;
+      const size = txt.length > 9 ? 110 : txt.length > 6 ? 140 : 180;
+      h += `<div class="layer center"><div class="big ${isAcc ? 'accent' : ''}" style="font-size:${size}px;transform:scale(${0.6 + 0.4*p}) rotate(${(rnd(i)-.5)*6}deg)">${glitch(esc(txt), t, g)}</div></div>`;
+    }
+    return h + cta(t, Math.max(end, c.dur - 3.2));
+  },
+
+  list(t) {
+    const c = CFG;
+    const hp = ease(prog(t, 0, .4));
+    let h = `<div class="layer" style="top:230px;padding:0 70px;text-align:center"><div class="hook" style="opacity:${hp};transform:translateY(${(1-hp)*40}px)">${c.hook}</div></div>`;
+    h += `<div class="layer" style="top:640px">`;
+    c.items.forEach((it, i) => {
+      const s = 1.0 + i * 1.3;
+      if (t > s) {
+        const p = ease(prog(t, s, .4));
+        h += `<div class="item" style="opacity:${p};transform:translateX(${(1-p)*-200}px)"><div class="num">${i+1}</div><div>${it}</div></div>`;
+      }
+    });
+    h += `</div>`;
+    return h + cta(t, c.dur - 3.2);
+  },
+
+  censor(t) {
+    const c = CFG;
+    const hp = ease(prog(t, 0, .4));
+    let h = `<div class="layer" style="top:260px;padding:0 70px;text-align:center"><div class="hook" style="opacity:${hp}">${c.hook}</div></div>`;
+    h += `<div class="layer center" style="top:200px">`;
+    c.lines.forEach((ln, i) => {
+      const appear = 0.8 + i * 0.35;
+      const rip = 2.4 + i * 0.9;
+      const ap = ease(prog(t, appear, .3));
+      const rp = ease(prog(t, rip, .35));
+      const shake = (t > rip - .15 && t < rip) ? (rnd(t*60)-.5)*18 : 0;
+      h += `<div style="opacity:${ap}"><div class="line" style="transform:translateX(${shake}px)">${ln.replace(/\*(.+?)\*/g,'<span class="accent">$1</span>')}
+        <div class="bar" style="transform:scaleX(${1 - rp}) "><span style="opacity:${1-rp*2}">CENSURÉ</span></div></div></div>`;
+    });
+    h += `</div>`;
+    return h + cta(t, c.dur - 3.2);
+  },
+};
+
+window.setup = (cfg) => {
+  CFG = cfg;
+  document.documentElement.style.setProperty('--acc', cfg.acc);
+  document.documentElement.style.setProperty('--acc2', cfg.acc2);
+};
+window.render = (t) => {
+  const shakeAmt = CFG.shake ? Math.pow(1 - ((t * CFG.bpm / 60) % 1), 6) * 6 : 0;
+  document.getElementById('stage').innerHTML =
+    `<div class="layer" style="transform:translate(${(rnd(t)-.5)*shakeAmt}px,${(rnd(t+1)-.5)*shakeAmt}px)">` +
+    background(t) + SCENES[CFG.type](t) + `</div>`;
+};
+</script>
+</body>
+</html>
