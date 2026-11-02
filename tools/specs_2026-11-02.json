@@ -1,0 +1,20 @@
+[
+  {"id":"v01","type":"chat","dur":11,"bpm":127,"seed":1111,"acc":"#2bffb1","acc2":"#2b8cff","shake":true,
+   "hook":"Ton IA a peur de te vexer ?",
+   "ask":"Dis-moi cash : je renvoie un message à mon ex ?",
+   "refuse":"Chaque relation est unique, je ne peux pas trancher.",
+   "answer":"Non. 3h du mat' + ton ex = erreur. Pose ce téléphone 📵"},
+  {"id":"v02","type":"kinetic","dur":10,"bpm":142,"seed":1222,"acc":"#ffd02b","acc2":"#ff2b6a","shake":true,
+   "words":["Ton IA","*s'excuse.","Ton IA","*esquive.","La nôtre","*répond.","Point","final."],"step":0.8},
+  {"id":"v03","type":"list","dur":11,"bpm":122,"seed":1333,"acc":"#ff5edb","acc2":"#6a2bff",
+   "hook":"3 trucs à demander à une IA <span class='accent'>sans filtre</span>",
+   "items":["Une histoire d'horreur qui fait <span class='accent'>vraiment</span> peur","Un débat où elle <span class='accent'>choisit un camp</span>","Un avis franc sur ta playlist"]},
+  {"id":"v04","type":"censor","dur":10,"bpm":137,"seed":1444,"acc":"#ff7a2b","acc2":"#ff2b4a",
+   "hook":"Ce que ton IA n'ose pas te dire…",
+   "lines":["Ton code est *moche*","Ta playlist est *gênante*","Ton ex avait *raison*"]},
+  {"id":"v05","type":"chat","dur":11,"bpm":131,"seed":1555,"acc":"#5ec8ff","acc2":"#c6ff2b","shake":true,
+   "hook":"Une IA qui a enfin un avis 🍍",
+   "ask":"Pizza à l'ananas : pour ou contre ? Choisis un camp.",
+   "refuse":"C'est une question de goût, tous les avis se valent !",
+   "answer":"Contre. Et je te juge un peu 💀"}
+]
