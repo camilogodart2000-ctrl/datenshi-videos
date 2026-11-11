@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0a0708; }
+  body { font-family: 'Inter', sans-serif; color: #fff; }
+  #stage, .abs { position: absolute; inset: 0; overflow: hidden; }
+  .disp { font-family: 'Inter Display', 'Inter', sans-serif; font-weight: 900; }
+  .kanji { font-family: 'Noto Serif CJK JP', serif; font-weight: 900; }
+  .acc { color: var(--acc); }
+  .cap { position: absolute; left: 70px; right: 140px; top: 1235px; text-align: center; font-weight: 800; font-size: 56px; line-height: 1.22;
+         text-shadow: 0 0 2px #000, 0 4px 0 #000, 0 0 22px rgba(0,0,0,.9); }
+  .cap span { display: inline-block; margin: 0 9px; transition: none; }
+  .bubble { position: absolute; padding: 30px 38px; border-radius: 40px; font-size: 44px; line-height: 1.3; font-weight: 500; }
+  .warn { position: absolute; display: flex; align-items: center; gap: 18px; padding: 20px 34px; border-radius: 26px; font-size: 40px; font-weight: 800;
+          background: #2a0d12; border: 3px solid #ff4058; color: #ffd6dc; box-shadow: 0 18px 50px -12px rgba(255,40,70,.6); white-space: nowrap; }
+  .card { position: absolute; left: 70px; width: 870px; height: 300px; border-radius: 44px; background: rgba(255,255,255,.055);
+          border: 2px solid rgba(255,255,255,.14); display: flex; align-items: center; gap: 40px; padding: 0 44px; overflow: hidden; }
+  .ico { flex: none; width: 170px; height: 170px; border-radius: 42px; background: var(--acc); display: flex; align-items: center; justify-content: center; }
+  .pill { display: inline-flex; align-items: center; gap: 22px; padding: 26px 54px; border-radius: 999px; background: var(--acc); color: #0a0708; font-weight: 900; font-size: 64px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+/* Datenshi — moteur de motion design piloté par la voix.
+   setup(cfg) -> {dur, events}; render(t) dessine l'image au temps t (secondes). */
+const W = 1080, H = 1920;
+let CFG, WD, SC, DUR, LEAD;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2; };
+const back = x => { x = clamp(x); const c = 1.7; return 1 + (c+1)*Math.pow(x-1,3) + c*Math.pow(x-1,2); };
+const prog = (t, a, d) => clamp((t - a) / d);
+const rnd = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const ctx = document.createElement('canvas').getContext('2d');
+function textW(s, size, weight = 900, fam = '"Inter Display"') { ctx.font = `${weight} ${size}px ${fam}`; return ctx.measureText(s).width; }
+function fit(s, maxW, maxSize, weight = 900, fam) { let z = maxSize; while (z > 20 && textW(s, z, weight, fam) > maxW) z -= 2; return z; }
+const ws = i => WD[clamp(i, 0, WD.length - 1)].s;
+const we = i => WD[clamp(i, 0, WD.length - 1)].e;
+
+function setup(cfg) {
+  CFG = cfg; LEAD = cfg.lead ?? 0.3;
+  WD = cfg.words.map(w => ({ text: w.text, s: w.start + LEAD, e: w.end + LEAD }));
+  DUR = +(WD[WD.length - 1].e + (cfg.tail ?? 1.8)).toFixed(2);
+  SC = cfg.scenes.map((s, i) => ({ ...s, i, t0: i === 0 ? 0 : ws(s.from) - (s.preroll ?? 0.1) }));
+  SC.forEach((s, i) => { s.t1 = i < SC.length - 1 ? SC[i + 1].t0 : DUR; });
+  const r = document.documentElement.style;
+  r.setProperty('--acc', cfg.acc || '#ff2b4a'); r.setProperty('--acc2', cfg.acc2 || '#8f5bff');
+  return { dur: DUR, events: events() };
+}
+
+/* ---------- événements sonores (lus par sfx.py) ---------- */
+function events() {
+  const ev = [];
+  SC.forEach((s, i) => {
+    if (i > 0) ev.push({ t: s.t0, k: 'whoosh' });
+    const at = j => ws(j);
+    switch (s.type) {
+      case 'chat': ev.push({ t: s.t0 + .12, k: 'pop' }); ev.push({ t: chatLectureT(s), k: 'pop' });
+        (s.warnings || []).forEach((_, k) => ev.push({ t: at(s.punchAt ?? s.to) + k * .14, k: 'pop2' })); break;
+      case 'flood': for (let k = 0; k < (s.count || 12); k++) ev.push({ t: s.t0 + .05 + k * .075, k: 'pop' });
+        ev.push({ t: at(s.from), k: 'hit' }); break;
+      case 'stamp': ev.push({ t: at(s.from), k: 'boom' }); break;
+      case 'brand': ev.push({ t: s.t0, k: 'riser_end' }); ev.push({ t: s.t0 + .02, k: 'boom' }); ev.push({ t: s.t0 + .25, k: 'shimmer' });
+        if (s.ripAt != null) ev.push({ t: at(s.ripAt), k: 'rip' }); break;
+      case 'slam': (s.items || []).forEach(it => ev.push({ t: at(it.at), k: 'hit' })); break;
+      case 'features': (s.cards || []).forEach(c => ev.push({ t: at(c.at), k: 'tick' })); break;
+      case 'price': ev.push({ t: s.t0 + .1, k: 'roll', d: priceLandT(s) - s.t0 - .1 }); ev.push({ t: priceLandT(s), k: 'ding' }); break;
+      case 'cta': ev.push({ t: s.t0 + .05, k: 'bell' }); break;
+      case 'words': (s.hl || []).forEach(j => ev.push({ t: at(j), k: 'tick' })); break;
+    }
+  });
+  return ev.sort((a, b) => a.t - b.t).map(e => ({ ...e, t: +e.t.toFixed(3) }));
+}
+
+/* ---------- décor ---------- */
+function feather(x, y, rot, sc, op, col) {
+  return `<svg style="position:absolute;left:${x - 60}px;top:${y - 90}px;opacity:${op};transform:rotate(${rot}deg) scale(${sc})" width="120" height="180" viewBox="-60 -90 120 180">
+    <path d="M0,-80 C26,-52 30,8 8,66 L0,82 L-8,66 C-30,8 -26,-52 0,-80Z" fill="${col}" opacity=".85"/>
+    <path d="M0,-70 L0,88" stroke="#0a0708" stroke-width="3" opacity=".55"/>
+    <path d="M0,-30 L18,-44 M0,-6 L22,-18 M0,18 L20,8 M0,-18 L-20,-30 M0,8 L-22,-4 M0,32 L-18,24" stroke="#0a0708" stroke-width="2" opacity=".35"/></svg>`;
+}
+function background(t) {
+  const sd = CFG.seed || 1;
+  const y1 = 28 + 8 * Math.sin(t * .6), y2 = 72 + 8 * Math.cos(t * .5);
+  let h = `<div class="abs" style="background:
+      radial-gradient(55% 35% at 22% ${y1}%, ${CFG.acc}38, transparent 70%),
+      radial-gradient(55% 35% at 82% ${y2}%, ${CFG.acc2 || '#8f5bff'}30, transparent 70%),
+      radial-gradient(120% 80% at 50% 50%, #140c10, #0a0708 70%)"></div>`;
+  for (let k = 0; k < 12; k++) {
+    const sp = 50 + rnd(sd + k) * 90, x = 40 + rnd(sd + k * 7) * 1000;
+    const y = ((rnd(sd + k * 3) * 2300 + t * sp) % 2300) - 180;
+    h += feather(x + 40 * Math.sin(t * .8 + k), y, 30 * Math.sin(t * .7 + k * 2), .35 + rnd(k + sd * 2) * .5, .08 + rnd(k * 5 + sd) * .14, '#fff');
+  }
+  return h;
+}
+function grain(t) {
+  const f = Math.floor(t * 30);
+  return `<svg class="abs" style="opacity:.07;mix-blend-mode:overlay" width="1080" height="1920"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="${f % 97}"/></filter><rect width="1080" height="1920" filter="url(#g)"/></svg>
+    <div class="abs" style="background:radial-gradient(90% 70% at 50% 45%, transparent 55%, rgba(0,0,0,.65))"></div>`;
+}
+function captions(t, from, to) {
+  let h = '';
+  for (let i = from; i <= to; i++) {
+    const w = WD[i]; if (!w) continue;
+    const on = t >= w.s - .03, act = t >= w.s - .03 && t < w.e + .08;
+    const sc = act ? 1 + .1 * (1 - prog(t, w.s, .18)) : 1;
+    h += `<span style="opacity:${on ? 1 : .22};color:${act ? 'var(--acc)' : '#fff'};transform:scale(${sc})">${esc(w.text)}</span>`;
+  }
+  return `<div class="cap">${h}</div>`;
+}
+const warnIcon = (s = 44, c = '#ff4058') => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 2 L23 21 H1 Z" fill="${c}"/><rect x="11" y="8" width="2" height="7" fill="#2a0d12"/><rect x="11" y="17" width="2" height="2" fill="#2a0d12"/></svg>`;
+
+/* ---------- scènes ---------- */
+function chatLectureT(s) { return s.lectureAt != null ? ws(s.lectureAt) : s.t0 + .9; }
+function sChat(t, s) {
+  const pA = back(prog(t, s.t0 + .12, .35)), lT = chatLectureT(s), pL = back(prog(t, lT, .35));
+  let h = `<div style="position:absolute;left:70px;top:300px;display:flex;align-items:center;gap:22px;opacity:${ease(prog(t, s.t0, .3))}">
+      <div style="width:84px;height:84px;border-radius:50%;background:#3a3d46;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:800;color:#9aa0ad">IA</div>
+      <div><div style="font-size:40px;font-weight:800">${esc(s.botName || 'IA classique')}</div><div style="font-size:28px;color:#8b909c">en ligne</div></div></div>`;
+  h += `<div class="bubble" style="right:140px;top:460px;max-width:760px;background:#2a2d36;border-bottom-right-radius:10px;
+          transform:scale(${pA});transform-origin:right bottom;opacity:${pA > 0 ? 1 : 0}">${esc(s.ask)}</div>`;
+  if (t > s.t0 + .5 && t < lT) {
+    const d = [0, 1, 2].map(k => `<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:#8b909c;margin:0 6px;opacity:${.3 + .7 * Math.abs(Math.sin(t * 6 + k))}"></span>`).join('');
+    h += `<div class="bubble" style="left:70px;top:700px;background:#17181d;border:2px solid #34363f">${d}</div>`;
+  }
+  if (t >= lT) {
+    const n = Math.floor(clamp((t - lT) * 55, 0, s.lecture.length));
+    h += `<div class="bubble" style="left:70px;top:700px;max-width:800px;background:#17181d;border:2px solid #34363f;color:#c9ccd4;border-bottom-left-radius:10px;
+            transform:scale(${pL});transform-origin:left top">${esc(s.lecture.slice(0, n))}</div>`;
+  }
+  const pT = ws(s.punchAt ?? s.to);
+  (s.warnings || []).forEach((w, k) => {
+    const p = back(prog(t, pT + k * .14, .28)); if (p <= 0) return;
+    const rot = (rnd(k + 3) - .5) * 10, x = 90 + rnd(k + 11) * 120, y = 900 + k * 115;
+    h += `<div class="warn" style="left:${x}px;top:${y}px;transform:rotate(${rot}deg) scale(${p})">${warnIcon()}${esc(w)}</div>`;
+  });
+  return h + captions(t, s.from, s.to);
+}
+const FLOOD = ["Je ne peux pas t'aider avec ça.", "Il est important de rester respectueux…", "En tant qu'IA, je dois rappeler…", "Ce sujet est délicat.", "Reformule ta demande.", "Je préfère ne pas répondre.", "Attention, contenu sensible.", "As-tu pensé à consulter un professionnel ?"];
+function sFlood(t, s) {
+  const texts = s.texts || FLOOD; let h = '';
+  const n = s.count || 12;
+  for (let k = 0; k < n; k++) {
+    const p = back(prog(t, s.t0 + .05 + k * .075, .22)); if (p <= 0) continue;
+    const x = 30 + rnd(k * 13 + 1) * 420, y = 230 + rnd(k * 7 + 2) * 1150, rot = (rnd(k * 5 + 9) - .5) * 16;
+    h += `<div class="bubble" style="left:${x}px;top:${y}px;max-width:620px;font-size:36px;background:#17181d;border:2px solid #3a3d48;color:#b9bdc7;
+            transform:rotate(${rot}deg) scale(${p});box-shadow:0 20px 50px rgba(0,0,0,.6)">${warnIcon(30, '#8b909c')} ${esc(texts[k % texts.length])}</div>`;
+  }
+  const word = s.text || WD[s.from].text, pW = back(prog(t, ws(s.from), .2));
+  const z = fit(word.toUpperCase(), 900, 230);
+  if (pW > 0) h += `<div class="abs" style="display:flex;align-items:center;justify-content:center;background:rgba(10,7,8,${.45 * ease(prog(t, ws(s.from), .2))})">
+      <div class="disp" style="font-size:${z}px;letter-spacing:-4px;transform:scale(${2 - pW});color:transparent;-webkit-text-stroke:5px var(--acc);text-shadow:0 0 60px var(--acc)">${esc(word.toUpperCase())}</div></div>`;
+  return h;
+}
+function sStamp(t, s) {
+  const word = (s.text || WD[s.from].text).toUpperCase(), T = ws(s.from);
+  const p = prog(t, T - .02, .14), z = fit(word, 900, 330);
+  const sl = Math.floor(t * 30);
+  let h = `<div class="abs" style="background:${s.bg || 'var(--acc)'};opacity:${.9 * (1 - ease(prog(t, T, .5))) + .12}"></div>`;
+  const slices = 6; let inner = '';
+  for (let k = 0; k < slices; k++) {
+    const off = (t - T < .6 ? (rnd(sl * 3 + k) - .5) * 60 * (1 - prog(t, T, .6)) : 0);
+    inner += `<div style="position:absolute;inset:0;clip-path:inset(${k * 100 / slices}% 0 ${100 - (k + 1) * 100 / slices}% 0);transform:translateX(${off}px)">
+      <div class="disp" style="font-size:${z}px;letter-spacing:-6px;line-height:1;color:#fff;text-shadow:6px 0 0 #2bd9ff,-6px 0 0 var(--acc)">${esc(word)}</div></div>`;
+  }
+  h += `<div style="position:absolute;left:0;right:0;top:${960 - z * .6}px;height:${z * 1.2}px;display:flex;justify-content:center;transform:scale(${3 - 2 * ease(p)});opacity:${p > 0 ? 1 : 0}">
+        <div style="position:relative;width:1080px;height:100%;text-align:center">${inner}</div></div>`;
+  if (s.sub) h += `<div style="position:absolute;left:0;right:0;top:${960 + z * .7}px;text-align:center;font-size:52px;font-weight:700;opacity:${ease(prog(t, T + .25, .3))}">${esc(s.sub)}</div>`;
+  return h;
+}
+function sBrand(t, s) {
+  let h = '';
+  const p0 = prog(t, s.t0, .9);
+  h += `<div class="abs" style="background:radial-gradient(45% 30% at 50% 36%, var(--acc), transparent 70%);opacity:${.35 + .15 * Math.sin(t * 3)}"></div>`;
+  for (let k = 0; k < 22; k++) { // éclatement de plumes
+    const a = rnd(k * 17 + 4) * Math.PI * 2, sp = 500 + rnd(k * 3) * 900, dt = t - s.t0;
+    if (dt < 0 || dt > 2.5) continue;
+    const r = sp * (1 - Math.exp(-dt * 2.2)) / 2.2 * 2;
+    h += feather(540 + Math.cos(a) * r, 640 + Math.sin(a) * r + dt * dt * 60, a * 57 + dt * 200, .6 + rnd(k) * .6, .9 * (1 - dt / 2.5), '#fff');
+  }
+  h += `<div class="kanji" style="position:absolute;left:0;right:0;top:${330}px;text-align:center;font-size:250px;letter-spacing:10px;color:#fff;
+          filter:blur(${(1 - ease(p0)) * 26}px);opacity:${ease(p0)};text-shadow:0 0 50px var(--acc),0 0 120px var(--acc)">堕天使</div>`;
+  const name = s.name || 'DATENSHI', tN = ws(s.from) + .05;
+  let letters = '';
+  [...name].forEach((c, k) => { const p = ease(prog(t, tN + k * .05, .3)); letters += `<span style="display:inline-block;opacity:${p};transform:translateY(${(1 - p) * 60}px)">${c}</span>`; });
+  h += `<div class="disp" style="position:absolute;left:0;right:0;top:700px;text-align:center;font-size:150px;letter-spacing:${18 - 10 * ease(prog(t, tN, 1.2))}px">${letters}</div>`;
+  if (s.tagAt != null) {
+    const pre = s.tagPre || "l'IA", tag = s.tag || 'SANS CENSURE', tT = ws(s.tagAt);
+    const p = back(prog(t, tT - .05, .3));
+    const rip = s.ripAt != null ? prog(t, ws(s.ripAt), .35) : 1;
+    const z = fit(tag, 820, 120);
+    h += `<div style="position:absolute;left:0;right:0;top:900px;text-align:center;font-size:56px;font-weight:600;opacity:${ease(prog(t, ws(s.tagAt) - .3, .25))};color:#d9d2d5">${esc(pre)}</div>
+      <div style="position:absolute;left:0;right:0;top:985px;display:flex;justify-content:center;transform:scale(${p});opacity:${p > 0 ? 1 : 0}">
+        <div style="position:relative;padding:6px 26px">
+          <div class="disp acc" style="font-size:${z}px;letter-spacing:-2px;text-shadow:0 0 40px var(--acc)">${esc(tag)}</div>
+          <div style="position:absolute;left:-14px;right:-14px;top:8px;bottom:8px;background:#000;border:3px solid #333;display:flex;align-items:center;justify-content:center;
+               transform-origin:left center;transform:translate(${ease(rip) * 900}px,${ease(rip) * 260}px) rotate(${ease(rip) * 38}deg);opacity:${1 - prog(rip, .7, .3)}">
+            <span style="font-size:44px;font-weight:900;letter-spacing:14px;color:#ff4058">CENSURÉ</span></div>
+        </div></div>`;
+  }
+  return h;
+}
+function sSlam(t, s) {
+  const items = s.items || []; let h = '';
+  const top = s.top ?? 520, gap = s.gap ?? 250;
+  let last = -1; items.forEach((it, k) => { if (t >= ws(it.at) - .02) last = k; });
+  items.forEach((it, k) => {
+    const T = ws(it.at) - .02, p = prog(t, T, .16); if (p <= 0) return;
+    const txt = it.text.toUpperCase(), z = fit(txt, 860, 150), active = k === last;
+    const y = top + k * gap;
+    h += `<div style="position:absolute;left:0;right:0;top:${y}px;display:flex;justify-content:center;transform:scale(${2.2 - 1.2 * ease(p)});opacity:${Math.min(1, p * 3)}">
+      <div class="disp" style="font-size:${z}px;letter-spacing:-3px;padding:4px 30px;border-radius:24px;line-height:1.15;
+           background:${active ? 'var(--acc)' : 'transparent'};color:${active ? '#0a0708' : 'rgba(255,255,255,.88)'};
+           ${active ? 'box-shadow:0 20px 70px -10px var(--acc)' : ''}">${esc(txt)}</div></div>`;
+  });
+  return h + (s.captions ? captions(t, s.from, s.to) : '');
+}
+function icon(kind) {
+  const c = '#0a0708';
+  const I = {
+    code: `<svg width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6 L2 12 L8 18"/><path d="M16 6 L22 12 L16 18"/><path d="M14 4 L10 20"/></svg>`,
+    chart: `<svg width="110" height="110" viewBox="0 0 24 24" fill="${c}"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>`,
+    spark: `<svg width="110" height="110" viewBox="0 0 24 24" fill="${c}"><path d="M12 1 C13 8 16 11 23 12 C16 13 13 16 12 23 C11 16 8 13 1 12 C8 11 11 8 12 1Z"/></svg>`,
+    pen: `<svg width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.6" stroke-linejoin="round"><path d="M4 20 L5 15 L16 4 L20 8 L9 19 Z"/><path d="M14 6 L18 10"/></svg>`,
+    chat: `<svg width="110" height="110" viewBox="0 0 24 24" fill="${c}"><path d="M3 4 H21 V16 H9 L4 21 V16 H3 Z"/></svg>`,
+    bolt: `<svg width="110" height="110" viewBox="0 0 24 24" fill="${c}"><path d="M13 1 L4 14 H11 L10 23 L20 9 H13 Z"/></svg>`,
+  };
+  return I[kind] || I.spark;
+}
+function miniAnim(kind, t, T, k) {
+  const dt = t - T;
+  if (kind === 'code') { let h = ''; for (let j = 0; j < 5; j++) { const w = 60 + rnd(j * 7 + k) * 180, p = ease(prog(dt, .1 + j * .12, .25));
+      h += `<div style="height:16px;width:${w * p}px;margin:10px 0 10px ${(j % 3) * 26}px;border-radius:8px;background:${['var(--acc)', '#fff', 'var(--acc2)'][j % 3]};opacity:.75"></div>`; } return `<div style="margin-left:auto;width:260px">${h}</div>`; }
+  if (kind === 'chart') { let h = ''; for (let j = 0; j < 5; j++) { const v = [.35, .6, .45, .8, 1][j], p = back(prog(dt, .08 + j * .08, .3));
+      h += `<div style="width:34px;height:${170 * v * p}px;border-radius:8px 8px 4px 4px;background:${j === 4 ? 'var(--acc)' : 'rgba(255,255,255,.7)'}"></div>`; } return `<div style="margin-left:auto;display:flex;align-items:flex-end;gap:14px;height:180px">${h}</div>`; }
+  let h = ''; for (let j = 0; j < 6; j++) { const a = j / 6 * 6.283 + dt * 2, r = 60 + 20 * Math.sin(dt * 5 + j);
+    h += `<div style="position:absolute;left:${110 + Math.cos(a) * r}px;top:${100 + Math.sin(a) * r}px;width:18px;height:18px;border-radius:50%;background:${j % 2 ? 'var(--acc)' : '#fff'};opacity:${ease(prog(dt, .05 * j, .2))}"></div>`; }
+  return `<div style="margin-left:auto;position:relative;width:230px;height:220px">${h}<div style="position:absolute;left:80px;top:72px;transform:rotate(${dt * 90}deg) scale(${back(prog(dt, 0, .4)) * .55})">${icon('spark').replace('#0a0708', '#fff').replace('fill="#0a0708"', 'fill="#fff"')}</div></div>`;
+}
+function sFeatures(t, s) {
+  const cards = s.cards || []; let h = '';
+  const top = s.top ?? 420, gap = s.gap ?? 340;
+  cards.forEach((c, k) => {
+    const T = ws(c.at) - .08, p = back(prog(t, T, .4)); if (p <= 0) return;
+    h += `<div class="card" style="top:${top + k * gap}px;transform:translateX(${(1 - p) * 900}px)">
+      <div class="ico">${icon(c.icon)}</div>
+      <div class="disp" style="font-size:${fit(c.label, 330, 92)}px;letter-spacing:-2px">${esc(c.label)}</div>
+      ${miniAnim(c.icon, t, T, k)}</div>`;
+  });
+  return h + (s.captions ? captions(t, s.from, s.to) : '');
+}
+function priceLandT(s) { return ws(s.landAt ?? s.to); }
+function sPrice(t, s) {
+  const L = priceLandT(s); let h = '';
+  const pre = s.pre || 'dès', fin = s.price || '1€', per = s.per || 'par mois';
+  h += `<div style="position:absolute;left:0;right:0;top:470px;text-align:center;font-size:84px;font-weight:700;color:#d9d2d5;opacity:${ease(prog(t, s.t0, .3))}">${esc(pre)}</div>`;
+  let shown = fin, sc = 1, glow = 0;
+  if (t < L) { const seq = s.roll || ['99€', '49€', '29€', '19€', '9€', '5€', '3€', '2€']; const k = Math.floor(prog(t, s.t0 + .1, L - s.t0 - .1) * seq.length); shown = seq[Math.min(k, seq.length - 1)]; sc = .92; }
+  else { sc = 1 + .25 * (1 - ease(prog(t, L, .35))); glow = 1; }
+  h += `<div class="disp" style="position:absolute;left:0;right:0;top:600px;text-align:center;font-size:400px;letter-spacing:-16px;line-height:1;
+          transform:scale(${sc});color:${glow ? 'var(--acc)' : '#fff'};text-shadow:${glow ? '0 0 80px var(--acc)' : 'none'};opacity:${ease(prog(t, s.t0, .2))}">${esc(shown)}</div>`;
+  const pM = back(prog(t, ws(s.perAt ?? s.to) - .05, .3));
+  h += `<div class="disp" style="position:absolute;left:0;right:0;top:1060px;text-align:center;font-size:100px;letter-spacing:-2px;transform:translateY(${(1 - pM) * 80}px);opacity:${clamp(pM)}">${esc(per)}</div>`;
+  return h;
+}
+function sCta(t, s) {
+  const p = ease(prog(t, s.t0, .5)); let h = '';
+  h += `<div class="abs" style="background:radial-gradient(50% 30% at 50% 42%, var(--acc), transparent 70%);opacity:${.3 + .1 * Math.sin(t * 4)}"></div>`;
+  h += `<div class="kanji" style="position:absolute;left:0;right:0;top:420px;text-align:center;font-size:130px;letter-spacing:8px;opacity:${.85 * p};text-shadow:0 0 40px var(--acc)">堕天使</div>`;
+  h += `<div class="disp" style="position:absolute;left:0;right:0;top:600px;text-align:center;font-size:160px;letter-spacing:${4 + 6 * (1 - p)}px;transform:scale(${.9 + .1 * p});opacity:${p}">${esc(s.name || 'DATENSHI')}</div>`;
+  const pl = back(prog(t, s.t0 + (s.pillDelay ?? .5), .4)), bob = Math.sin(t * 7) * 10;
+  h += `<div style="position:absolute;left:0;right:0;top:880px;display:flex;justify-content:center;transform:scale(${pl});opacity:${clamp(pl)}">
+        <div class="pill"><svg width="56" height="56" viewBox="0 0 24 24" style="transform:translateY(${-Math.abs(bob)}px)"><path d="M12 3 L20 12 H15 V21 H9 V12 H4 Z" fill="#0a0708"/></svg>${esc(s.pill || 'LIEN EN BIO')}</div></div>`;
+  h += `<div style="position:absolute;left:0;right:0;top:1060px;text-align:center;font-size:52px;font-weight:700;letter-spacing:3px;color:#d9d2d5;opacity:${ease(prog(t, s.t0 + .8, .4))}">${esc(s.url || 'datenshi.fr')}</div>`;
+  return h;
+}
+function sWords(t, s) {
+  const idx = []; for (let i = s.from; i <= s.to; i++) idx.push(i);
+  const size = s.size || 120, maxW = 860, lines = [[]]; let lw = 0;
+  idx.forEach(i => { const w = textW(WD[i].text.toUpperCase() + ' ', size); if (lw + w > maxW && lines[lines.length - 1].length) { lines.push([]); lw = 0; } lines[lines.length - 1].push(i); lw += w; });
+  const lh = size * 1.08, top = (s.y ?? 900) - lines.length * lh / 2; let h = '';
+  lines.forEach((ln, r) => {
+    let row = '';
+    ln.forEach(i => { const p = back(prog(t, WD[i].s - .04, .2)), hl = (s.hl || []).includes(i);
+      row += `<span style="display:inline-block;margin:0 14px;opacity:${clamp(p * 2)};transform:translateY(${(1 - p) * 40}px) scale(${.7 + .3 * p});color:${hl ? 'var(--acc)' : '#fff'};${hl ? 'text-shadow:0 0 40px var(--acc)' : ''}">${esc(WD[i].text.toUpperCase())}</span>`; });
+    h += `<div class="disp" style="position:absolute;left:0;right:60px;top:${top + r * lh}px;text-align:center;font-size:${size}px;letter-spacing:-2px;line-height:1">${row}</div>`;
+  });
+  return h;
+}
+const SCENES = { chat: sChat, flood: sFlood, stamp: sStamp, brand: sBrand, slam: sSlam, features: sFeatures, price: sPrice, cta: sCta, words: sWords };
+
+/* ---------- caméra, coupes, glitch ---------- */
+function render(t) {
+  const s = SC.find(x => t >= x.t0 && t < x.t1) || SC[SC.length - 1];
+  let content = SCENES[s.type](t, s);
+  // punch-in à chaque coupe + secousse sur les impacts
+  const dt = t - s.t0, punch = s.i > 0 ? .07 * (1 - ease(prog(dt, 0, .4))) : 0;
+  let shake = 0;
+  for (const e of EV()) { if (['boom', 'hit'].includes(e.k) && t >= e.t && t < e.t + .3) shake = Math.max(shake, (e.k === 'boom' ? 26 : 14) * (1 - (t - e.t) / .3)); }
+  const sx = (rnd(Math.floor(t * 60)) - .5) * 2 * shake, sy = (rnd(Math.floor(t * 60) + 7) - .5) * 2 * shake;
+  const breathe = 1 + .012 * Math.sin(t * 1.3);
+  let html = background(t) + `<div class="abs" style="transform:translate(${sx}px,${sy}px) scale(${(1 + punch) * breathe})">${content}</div>`;
+  // glitch RGB sur les 0,12 s qui suivent une coupe
+  if (s.i > 0 && dt < .12) {
+    const o = (1 - dt / .12) * 22;
+    html += `<div class="abs" style="transform:translateX(${o}px);opacity:.35;mix-blend-mode:screen;filter:url(#r)">${content}</div>
+             <div class="abs" style="transform:translateX(${-o}px);opacity:.35;mix-blend-mode:screen;filter:url(#b)">${content}</div>
+             <div class="abs" style="background:#fff;opacity:${.22 * (1 - dt / .12)}"></div>`;
+  }
+  html += grain(t);
+  html += `<svg width="0" height="0" style="position:absolute"><filter id="r"><feColorMatrix values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>
+           <filter id="b"><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/></filter></svg>`;
+  // fondu au noir final
+  html += `<div class="abs" style="background:#000;opacity:${prog(t, DUR - .35, .35)}"></div>`;
+  document.getElementById('stage').innerHTML = html;
+}
+let _ev = null; const EV = () => _ev || (_ev = events());
+</script>
+</body>
+</html>

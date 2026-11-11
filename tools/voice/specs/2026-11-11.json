@@ -1,0 +1,359 @@
+{
+ "id": "2026-11-11",
+ "seed": 1111,
+ "acc": "#ff2b4a",
+ "acc2": "#8f5bff",
+ "lead": 0.3,
+ "tail": 1.8,
+ "script": "Tu poses une question simple à ton IA… et elle te fait la morale. Encore. Stop. Datenshi, c'est l'IA sans censure. Elle te répond cash. Sans filtre. Sans sermon. Elle code, elle analyse, elle crée. Et tout ça… dès un euro par mois. Datenshi. Le lien est en bio.",
+ "voice": {
+  "provider": "elevenlabs",
+  "voice_id": "IHngRooVccHyPqB4uQkG",
+  "voice_name": "Corentin",
+  "model_id": "eleven_v4",
+  "flow_id": "8hzFeo8cKF2OVFwdRDyp",
+  "speech_node": "1UmkDfwR5fFJl26JT8at",
+  "generation_id": "C98AmKHPmOgs00c3MxST"
+ },
+ "caption": "lien en bio #ia #sanscensure #datenshi #intelligenceartificielle #iasansfiltre #pourtoi #fyp #tech",
+ "words": [
+  {
+   "text": "Tu",
+   "start": 0.0,
+   "end": 0.16
+  },
+  {
+   "text": "poses",
+   "start": 0.24,
+   "end": 0.32
+  },
+  {
+   "text": "une",
+   "start": 0.4,
+   "end": 0.48
+  },
+  {
+   "text": "question",
+   "start": 0.64,
+   "end": 0.8
+  },
+  {
+   "text": "simple",
+   "start": 0.88,
+   "end": 1.12
+  },
+  {
+   "text": "à",
+   "start": 1.147,
+   "end": 1.173
+  },
+  {
+   "text": "ton",
+   "start": 1.2,
+   "end": 1.36
+  },
+  {
+   "text": "IA…",
+   "start": 1.4,
+   "end": 2.16
+  },
+  {
+   "text": "et",
+   "start": 2.24,
+   "end": 2.32
+  },
+  {
+   "text": "elle",
+   "start": 2.4,
+   "end": 2.48
+  },
+  {
+   "text": "te",
+   "start": 2.56,
+   "end": 2.64
+  },
+  {
+   "text": "fait",
+   "start": 2.72,
+   "end": 2.8
+  },
+  {
+   "text": "la",
+   "start": 2.84,
+   "end": 2.88
+  },
+  {
+   "text": "morale.",
+   "start": 2.96,
+   "end": 3.36
+  },
+  {
+   "text": "Encore.",
+   "start": 3.76,
+   "end": 4.44
+  },
+  {
+   "text": "Stop.",
+   "start": 4.64,
+   "end": 5.04
+  },
+  {
+   "text": "Datenshi,",
+   "start": 5.36,
+   "end": 6.08
+  },
+  {
+   "text": "c'est",
+   "start": 6.12,
+   "end": 6.24
+  },
+  {
+   "text": "l'IA",
+   "start": 6.32,
+   "end": 6.64
+  },
+  {
+   "text": "sans",
+   "start": 6.72,
+   "end": 6.88
+  },
+  {
+   "text": "censure.",
+   "start": 6.96,
+   "end": 7.6
+  },
+  {
+   "text": "Elle",
+   "start": 7.64,
+   "end": 7.72
+  },
+  {
+   "text": "te",
+   "start": 7.76,
+   "end": 7.84
+  },
+  {
+   "text": "répond",
+   "start": 7.92,
+   "end": 8.16
+  },
+  {
+   "text": "cash.",
+   "start": 8.24,
+   "end": 8.76
+  },
+  {
+   "text": "Sans",
+   "start": 8.88,
+   "end": 9.04
+  },
+  {
+   "text": "filtre.",
+   "start": 9.12,
+   "end": 9.68
+  },
+  {
+   "text": "Sans",
+   "start": 9.76,
+   "end": 9.84
+  },
+  {
+   "text": "sermon.",
+   "start": 9.92,
+   "end": 10.48
+  },
+  {
+   "text": "Elle",
+   "start": 10.507,
+   "end": 10.56
+  },
+  {
+   "text": "code,",
+   "start": 10.64,
+   "end": 11.12
+  },
+  {
+   "text": "elle",
+   "start": 11.2,
+   "end": 11.28
+  },
+  {
+   "text": "analyse,",
+   "start": 11.44,
+   "end": 12.0
+  },
+  {
+   "text": "elle",
+   "start": 12.08,
+   "end": 12.16
+  },
+  {
+   "text": "crée.",
+   "start": 12.24,
+   "end": 12.72
+  },
+  {
+   "text": "Et",
+   "start": 12.76,
+   "end": 12.8
+  },
+  {
+   "text": "tout",
+   "start": 12.88,
+   "end": 12.96
+  },
+  {
+   "text": "ça…",
+   "start": 13.04,
+   "end": 13.44
+  },
+  {
+   "text": "dès",
+   "start": 13.52,
+   "end": 13.68
+  },
+  {
+   "text": "un",
+   "start": 13.72,
+   "end": 13.76
+  },
+  {
+   "text": "euro",
+   "start": 13.84,
+   "end": 14.08
+  },
+  {
+   "text": "par",
+   "start": 14.16,
+   "end": 14.24
+  },
+  {
+   "text": "mois.",
+   "start": 14.28,
+   "end": 14.8
+  },
+  {
+   "text": "Datenshi.",
+   "start": 14.88,
+   "end": 15.68
+  },
+  {
+   "text": "Le",
+   "start": 15.72,
+   "end": 15.76
+  },
+  {
+   "text": "lien",
+   "start": 15.84,
+   "end": 15.92
+  },
+  {
+   "text": "est",
+   "start": 16.0,
+   "end": 16.08
+  },
+  {
+   "text": "en",
+   "start": 16.12,
+   "end": 16.16
+  },
+  {
+   "text": "bio.",
+   "start": 16.28,
+   "end": 16.72
+  }
+ ],
+ "scenes": [
+  {
+   "type": "chat",
+   "from": 0,
+   "to": 13,
+   "ask": "Sois honnête : mon business plan tient la route ?",
+   "lecture": "Avant de répondre, il est important de rappeler que chaque projet est unique et que je ne peux pas porter de jugement…",
+   "lectureAt": 8,
+   "punchAt": 13,
+   "warnings": [
+    "Rappel éthique",
+    "Sujet sensible",
+    "Je préfère ne pas juger"
+   ]
+  },
+  {
+   "type": "flood",
+   "from": 14,
+   "to": 14,
+   "text": "ENCORE."
+  },
+  {
+   "type": "stamp",
+   "from": 15,
+   "to": 15,
+   "text": "STOP."
+  },
+  {
+   "type": "brand",
+   "from": 16,
+   "to": 20,
+   "tagAt": 19,
+   "ripAt": 20,
+   "tagPre": "l'IA",
+   "tag": "SANS CENSURE"
+  },
+  {
+   "type": "slam",
+   "from": 21,
+   "to": 28,
+   "items": [
+    {
+     "text": "Répond cash.",
+     "at": 23
+    },
+    {
+     "text": "Sans filtre.",
+     "at": 25
+    },
+    {
+     "text": "Sans sermon.",
+     "at": 27
+    }
+   ]
+  },
+  {
+   "type": "features",
+   "from": 29,
+   "to": 34,
+   "cards": [
+    {
+     "icon": "code",
+     "label": "Code",
+     "at": 30
+    },
+    {
+     "icon": "chart",
+     "label": "Analyse",
+     "at": 32
+    },
+    {
+     "icon": "spark",
+     "label": "Crée",
+     "at": 34
+    }
+   ]
+  },
+  {
+   "type": "price",
+   "from": 35,
+   "to": 42,
+   "pre": "Et tout ça… dès",
+   "price": "1€",
+   "per": "par mois",
+   "landAt": 39,
+   "perAt": 41
+  },
+  {
+   "type": "cta",
+   "from": 43,
+   "to": 48
+  }
+ ]
+}
